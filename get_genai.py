@@ -1,20 +1,35 @@
 import google.generativeai as genai
-
 from dotenv import load_dotenv
 import os
+from logger_config import logger
 
 def get_genai():
-    load_dotenv()  # Load environment variables from .env file
+    try:
+        # Load environment variables from .env file
+        load_dotenv()
+        GOOGLE_API_KEY = os.getenv("GOOGLE_GENAI_API_KEY")
 
-    GOOGLE_API_KEY = os.getenv("GOOGLE_GENAI_API_KEY")
-    # print(GOOGLE_API_KEY)
+        if not GOOGLE_API_KEY:
+            logger.critical("GOOGLE_GENAI_API_KEY not found in environment variables")
+            return
 
-    genai.configure(api_key=GOOGLE_API_KEY)
+        logger.info("Retrieved Google API Key")
+        genai.configure(api_key=GOOGLE_API_KEY)
 
-    for m in genai.list_models():
-        if "embedContent" in m.supported_generation_methods:
-            print(m.name)
+        check = list(genai.list_models())
+        if check:  # Check if the list is not empty
+            logger.info("Connected to GenAI successfully")
+        else:
+            logger.critical("GenAI Connection Failed: No models available")
+            return
 
-    return genai
+    except Exception as e:
+        logger.critical(f"GenAI Connection Failed: {e}", exc_info=True)
+        return
+    else:
+        return genai
+
 if __name__ == "__main__":
-    get_genai()
+    genai_instance = get_genai()
+    if genai_instance:
+        logger.info("GenAI instance created successfully")
